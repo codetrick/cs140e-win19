@@ -8,14 +8,14 @@
 
 # put all of your source files you have here. e.g., 
 # 	SRC = my-uart.c
-SRC =
+SRC = my-gpio.c my-uart.c
 
 ###########################################################################
 # these are .o's we give you in libpi.support/ --- when you want to use
 # your my-uart.c delete the right hand side:
-# 	SUPPORT_OBJS = 
+ SUPPORT_OBJS =
 
-SUPPORT_OBJS=	libpi.support/gpio.o libpi.support/gpioextra.o libpi.support/uart.o
+# SUPPORT_OBJS=	libpi.support/uart.o libpi.support/gpio.o
 
 ###########################################################################
 # these are any .c files you want out of libpi.support/

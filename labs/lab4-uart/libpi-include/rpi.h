@@ -14,6 +14,9 @@ void PUT8(unsigned addr, unsigned v);
 // *(unsigned *)addr
 unsigned GET32(unsigned addr);
 
+// *(unsigned *)addr
+unsigned GET8(unsigned addr);
+
 // set pc value to <addr>
 void BRANCHTO ( unsigned int addr);
 

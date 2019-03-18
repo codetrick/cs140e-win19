@@ -4,7 +4,8 @@
 .globl _start
 _start:
     // dwelch starts here: mov sp, #0x8000
-    mov sp, #0x8000000
+    // mov sp, #0x8000000
+    mov sp, #0x8000
     mov fp, #0  // i don't think necessary.
     bl notmain
     bl reboot // if they return just reboot.
