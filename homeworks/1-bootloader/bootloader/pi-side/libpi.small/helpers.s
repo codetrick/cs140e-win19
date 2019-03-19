@@ -22,6 +22,11 @@ GET32:
     ldr r0,[r0]
     bx lr
 
+.globl GET8
+GET8:
+    ldrb r0,[r0]
+    bx lr
+
 .globl GETPC
 GETPC:
     mov r0,lr

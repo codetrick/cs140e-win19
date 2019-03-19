@@ -1,5 +1,6 @@
 LIB_OBJS = reboot.o timer.o helpers.o mem-barrier.o
-EXTRA= gpio.o gpioextra.o  uart.o
+# EXTRA= gpio.o gpioextra.o  uart.o
+EXTRA = my-gpio.o my-uart.o
 SRC = $(LIB_OBJS:.o=.c)
 
 ARM = arm-none-eabi
@@ -20,12 +21,12 @@ all : $(TARGET)
 .c.o:
 	$(CC) $(CFLAGS) -c $< 
 
-$(TARGET): $(LIB_OBJS) 
+$(TARGET): $(LIB_OBJS) $(EXTRA)
 	arm-none-eabi-ar crf libpi.a $^ $(EXTRA)
 	$(OD) -D $@ > $@.list
 
 clean :
-	rm -f $(LIB_OBJS) start.o *.bin *.hex *.elf *.list *.img *.bc *.clang.s *~ $(TARGET)  Makefile.bak
+	rm -f $(LIB_OBJS) $(EXTRA) start.o *.bin *.hex *.elf *.list *.img *.bc *.clang.s *~ $(TARGET)  Makefile.bak
 
 depend: 
 	makedepend $(SRC)

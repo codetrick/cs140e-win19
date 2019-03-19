@@ -7,6 +7,7 @@
 #include "../shared-code/simple-boot.h"
 
 #include "libpi.small/rpi.h"
+#include "libpi.small/timer.h"
 
 static void send_byte(unsigned char uc) {
 	uart_putc(uc);
@@ -53,7 +54,29 @@ void notmain(void) {
 
 
 	/* XXX put your bootloader implementation here XXX */
-
+    unsigned nbytes; // length of the code
+    unsigned checksum; // checksum of the code
+    if (get_uint() != SOH)
+        die(BAD_START);
+    nbytes = get_uint();
+    if (nbytes > 0x200000-0x8000)
+        die(TOO_BIG);
+    checksum = get_uint();
+    // send back confirmation
+    put_uint(SOH);
+    put_uint(crc32((const void *)&nbytes, 4));
+    put_uint(checksum);
+    // now start receiving the code and copy to ARMBASE
+    for (unsigned target=ARMBASE; target<ARMBASE+nbytes; target+=4)
+        PUT32(target, get_uint());
+    // get EOT
+    if (get_uint() != EOT)
+        die(BAD_END);
+    // check crc32
+    if (crc32((const char *)ARMBASE, nbytes) != checksum)
+        die(BAD_CKSUM);
+    // send ACK
+    put_uint(ACK);
 
 	// XXX: appears we need these delays or the unix side gets confused.
 	// I believe it's b/c the code we call re-initializes the uart; could
@@ -61,7 +84,7 @@ void notmain(void) {
 	delay_ms(500);
 
 	// run what client sent.
-        BRANCHTO(ARMBASE);
+    BRANCHTO(ARMBASE);
 	// should not get back here, but just in case.
 	reboot();
 }

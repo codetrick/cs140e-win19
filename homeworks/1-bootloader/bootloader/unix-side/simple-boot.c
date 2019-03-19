@@ -58,5 +58,45 @@ void expect(const char *msg, int fd, unsigned v) {
 // unix-side bootloader: send the bytes, using the protocol.
 // read/write using put_uint() get_unint().
 void simple_boot(int fd, const unsigned char * buf, unsigned n) { 
-	unimplemented();
+    unsigned tmp;
+    unsigned checksum = crc32(buf, n);
+    put_uint(fd, SOH);
+    put_uint(fd, n);
+    put_uint(fd, checksum);
+    usleep(1000); // sleep for 5 ms
+    printf("Header sent\n");
+    // check for errors
+    switch (tmp=get_uint(fd)) {
+        case BAD_START:
+            panic("header bad start!\n");
+        case TOO_BIG:
+            panic("Program too big!\n");
+        case SOH:
+            if (get_uint(fd) != crc32((const void *)&n, 4))
+                panic("CRC32 checksum is wrong.\n");
+            if (get_uint(fd) != checksum)
+                panic("CRC32 disagree.\n");
+            break;
+        default:
+            panic("Did not receive SOH from rpi.\n");
+    }
+    for (int i=0; i<n; i++) {
+        send_byte(fd, buf[i]);
+    }
+    put_uint(fd, EOT);
+    printf("EOT sent!\n");
+    usleep(1000); // sleep for 1 ms
+    switch (get_uint(fd)) {
+        case BAD_END:
+            panic("Bad end of transmission!\n");
+        case BAD_CKSUM:
+            panic("Data corruption detected via checksum.\n");
+        case ACK:
+            printf("Got ACK!\n");
+            break;
+        default:
+            panic("Did not receive ACK from rpi.\n");
+    }
+    printf("Bootloading success!\n");
+    return;
 }
