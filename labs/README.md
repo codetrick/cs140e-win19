@@ -120,49 +120,38 @@
   hardware, translation, and page table state (more subtle than it
   sounds).  At the end you should be able to delete all our starter code.
 
-  14. TBD: you will do the final piece of VM: setting up protection and
-  handling faults.  We will do a cute hack using this ability.
 
-### Binary code:
+### Project lab
 
-TBD:
+  14. [lab14-watch](lab14-watch/): This is a light lab so you can
+      kick-start your final project: brainstorm, write some initial code,
+      look through the devices we have to place some orders for some others.
+      However, since this is cs140e, we will still write some code and have
+      a checkoff.
 
-  - Implement a domain-specific, simple visual programming language
-  for specifing binary formats.  You will use it to make it much
-  easier to implement subsequent labs, since it greatly aids specifing
-  virtual memory (page table entry, register layout), , machine code
-  encoding/decoding.
+      You'll build a tool `cmd-watch` that will run any command (given as
+      command line arguments) if any source file in the current directory
+      changes.  This should help you the rest of your coding career
+      since it allows you to script an entire sequence of operations
+      that happen immediately and automatically as soon as you save any
+      file you are working on.
 
-  - Runtime code generation, using your language.
+  15. [lab15-syscall](lab15-syscall): Today is a relatively light lab
+      so you have more time for projects.  We're going to build a
+      simple system call.  Once we have this in place, we can then make
+      user-level processes --- without it, they would not even be able
+      to call `exit()`.
 
-  - Implement a statistical version of Valgrind and Eraser using pc-sampling
-  and instruction decoding.
+      As a secondary purpose, this lab will get you more comfortable
+      with interrupts since it will require you do invasive surgery on the
+      timer-interrupt code from `lab7-interrupts` in order to repurpose it
+      to support system calls.
 
+### Final labs.
 
-### File system / SD Card.
-
-TBD:
-
-  - Implement a simple FAT32 file system using an SD card driver so you
+  16. Implement a simple FAT32 file system using an SD card driver so you
   can read/write files to the SD card.
 
-### Devices
+  17. Free-form lab work on final project.
 
-TBD:
-  
-   - You'll implement the widely-used I2C protocol using the broadcom 
-   documents
-
-   - Implement a gyroscope / accelerometer using your protocol.
-
-### Final projects.
-
-Multiple options:
-
-  - Extend your OS to do tricks in more advanced ways.
-
-  - You'll have an expense account at sparkfun/adafruit.  You can buy
-  whatever device you need and write the code to have your OS control
-  it to do interesting things.
-
-  - ? 
+  18. Final project presentations.
