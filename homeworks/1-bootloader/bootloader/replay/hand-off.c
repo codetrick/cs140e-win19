@@ -16,7 +16,9 @@
 
 // synchronously wait for <pid> to exit.  Return its exit code.
 static int exit_code(int pid) {
-	unimplemented();
+    int wstatus;
+    waitpid(pid, &wstatus, 0);
+    return WEXITSTATUS(wstatus);
 }
 
 // run:
@@ -32,10 +34,26 @@ static int exit_code(int pid) {
 //  should be identical to running it raw.
 void run(int fd, char *argv[]) {
 	int pid = 0;
-	unimplemented();
-	/* ... */
+    switch (pid = fork()) {
+        case -1:
+            // error
+            sys_die(fork, forking failed);
+        case 0:
+            // child
+            if (dup2(fd, TRACE_FD_HANDOFF)<0)
+                sys_die(dup2, dup2 failed);
+            if (close(fd)<0)
+                sys_die(close, child cannot close fd);
+            execvp((const char *)argv[0], argv);
+            fprintf(stderr, "Execvp failed.\n");
+            return;
+        default:
+            // parent
+            if (close(fd)<0)
+                sys_die(close, parent cannot close fd);
+            fprintf(stderr, "child %d: exited with: %d\n", pid, exit_code(pid));
+    }
 
-	fprintf(stderr, "child %d: exited with: %d\n", pid, exit_code(pid));
 }
 
 int main(int argc, char *argv[]) {

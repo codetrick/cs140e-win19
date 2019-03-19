@@ -2,8 +2,8 @@ CC = gcc
 CFLAGS = -Wall -g -std=gnu99 -I../unix-side
 OBJS = ../unix-side/support.o ../unix-side/tty.o
 
-RUN = ../unix-side/my-install ../test-binaries/hello.bin
-RUN_TRACE = ../unix-side/my-install -trace ../test-binaries/hello.bin
+RUN = ../unix-side/my-install -silent ../test-binaries/hello.bin
+RUN_TRACE = ../unix-side/my-install -trace -silent ../test-binaries/hello.bin
 
 PROGS = replay hand-off
 
@@ -22,7 +22,7 @@ hand-off:  $(OBJS)  hand-off.o
 run: 
 	./replay $(RUN) < ../unix-side/hello.trace.txt 
 
-test.hand-off:
+test.hand-off: hand-off
 	./hand-off $(RUN_TRACE) | grep TRACE: > /tmp/trace.txt
 	diff /tmp/trace.txt ../unix-side/hello.trace.txt
 
