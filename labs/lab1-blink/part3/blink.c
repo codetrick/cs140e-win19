@@ -24,16 +24,16 @@ volatile unsigned *gpio_clr0  = (volatile unsigned *)(GPIO_BASE + 0x28);
 // XXX might need memory barriers.
 void gpio_set_output(unsigned pin) {
 	// gpio_fsel1  --- set 'pin' to output.
-    gpio_fsel0[pin/10] = (gpio_fsel0[pin/10] & ~(0b111 << 3*(pin%10))) | (0b001 << 3*(pin%10));
+    put32(gpio_fsel0+pin/10, (get32(gpio_fsel0+pin/10) & ~(0b111 << 3*(pin%10))) | (0b001 << 3*(pin%10)));
 }
 
 void gpio_set_on(unsigned pin) {
 	// use gpio_set0
-    gpio_set0[pin/32] |= 1 << pin%32;
+    put32(gpio_set0+pin/32, 1 << pin%32);
 }
 void gpio_set_off(unsigned pin) {
 	// use gpio_clr0
-    gpio_clr0[pin/32] |= 1 << pin%32;
+    put32(gpio_clr0+pin/32, 1 << pin%32);
 }
 
 // countdown 'ticks' cycles; the asm probably isn't necessary.
