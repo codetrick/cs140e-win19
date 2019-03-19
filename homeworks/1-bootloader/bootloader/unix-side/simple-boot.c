@@ -8,6 +8,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include "demand.h"
+#include "trace.h"
 
 #define __SIMPLE_IMPL__
 #include "../shared-code/simple-boot.h"
@@ -36,10 +37,12 @@ static unsigned get_uint(int fd) {
         u |= get_byte(fd) << 8;
         u |= get_byte(fd) << 16;
         u |= get_byte(fd) << 24;
+        trace_read32(u);
         return u;
 }
 
 void put_uint(int fd, unsigned u) {
+        trace_write32(u);
 	// mask not necessary.
         send_byte(fd, (u >> 0)  & 0xff);
         send_byte(fd, (u >> 8)  & 0xff);
@@ -80,8 +83,8 @@ void simple_boot(int fd, const unsigned char * buf, unsigned n) {
         default:
             panic("Did not receive SOH from rpi.\n");
     }
-    for (int i=0; i<n; i++) {
-        send_byte(fd, buf[i]);
+    for (int i=0; i<n; i+=4) {
+        put_uint(fd, *((unsigned *)&buf[i]));
     }
     put_uint(fd, EOT);
     printf("EOT sent!\n");
