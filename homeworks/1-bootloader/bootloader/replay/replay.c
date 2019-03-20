@@ -44,12 +44,33 @@ endpoint_t mk_endpoint_proc(const char *name, Q_t q, char *argv[]) {
 	int pid;
 	int sock[2];
 
-	unimplemented();
+    // create a socket pair
+    if (socketpair(PF_LOCAL, SOCK_STREAM, 0, sock) < 0)
+        sys_die(socketpair, failed);
 
-	// this should sort-of follow your handoff code except you're using
-	// sockets.
-
-        return mk_endpoint(name, q, sock[0], pid);
+    // fork
+    switch (pid = fork()) {
+        case -1:
+            // error
+            sys_die(fork, forking failed);
+        case 0:
+            // child
+            // make the child of the socket into fd <TRACE_FD_REPLAY>
+            if (dup2(sock[1], TRACE_FD_REPLAY)<0)
+                sys_die(dup2, dup2 failed);
+            // close the unused socket side
+            if (close(sock[0])<0)
+                sys_die(close, child cannot close sock[0]);
+            execvp((const char *)argv[0], argv);
+            sys_die(execvp, execvp failed);
+        default:
+            // parent
+            // close child side socket
+            if (close(sock[1])<0)
+                sys_die(close, parent cannot close sock[1]);
+            // make an endpoint
+            return mk_endpoint(name, q, sock[0], pid);
+    }
 }
 
 /*
@@ -58,8 +79,12 @@ endpoint_t mk_endpoint_proc(const char *name, Q_t q, char *argv[]) {
  *	2. otherwise return -1.
  */
 static int proc_exit_code(endpoint_t *this) {
-	// use your hand-off code (more or less)
-	unimplemented();
+    int wstatus;
+    waitpid(-1, &wstatus, 0);
+    if (WIFEXITED(wstatus))
+        return WEXITSTATUS(wstatus);
+    else
+        return -1;
 }
 
 static void write_exact(endpoint_t *this, void *buf, int nbytes) {
@@ -76,7 +101,20 @@ static void write_exact(endpoint_t *this, void *buf, int nbytes) {
  *	2. return 1 if not.
  */
 int has_data(endpoint_t *this, unsigned timeout_secs) {
-	unimplemented();
+    // see man 3 pselect
+    struct timeval tv;
+    fd_set rfds; // read file descriptors
+    FD_ZERO(&rfds); // initialize the struct
+    FD_SET(this->fd, &rfds); // add the fd to it
+    tv.tv_sec = timeout_secs;
+    tv.tv_usec = 0;
+    int r;
+    if ((r = select(this->fd+1, &rfds, NULL, NULL, &tv)) < 0)
+        sys_die(select, failed?);
+    else if (!r)
+        // timeout
+        return 0;
+    else
         return 1;
 }
 
@@ -96,7 +134,8 @@ int has_data(endpoint_t *this, unsigned timeout_secs) {
 static int is_eof(endpoint_t *end) {
 	if(!has_data(end, timeout_secs))
 		err("process <%s> should have exited after 1 sec\n", end->name);
-	unimplemented();
+    char c;
+    demand(read(end->fd, (void *)&c, 1) == 0, expecting EOF but got something else);
 	return 1;
 }
 
@@ -111,7 +150,17 @@ static int is_eof(endpoint_t *end) {
  */
 // endpoints write 1 byte at a time.  so can get a split.
 static int read_exact(endpoint_t *e, void *buf, int n, int can_fail_p) {
-	unimplemented();
+    unsigned n_recv = 0;
+    unsigned n_read;
+    while (n_recv < n) {
+        if ((n_read = read(e->fd, buf+n_recv, n-n_recv)) <= 0) {
+            if (can_fail_p)
+                return 0;
+            else
+                err("read fails in read_exact()");
+        }
+        n_recv += n_read;
+    }
 	return 1;
 }
 
@@ -123,7 +172,7 @@ static int read_exact(endpoint_t *e, void *buf, int n, int can_fail_p) {
 // time.  however, b/c of interfaces (and their contracts) we can have
 // deterministic code in the midst of this chaos.
 void replay(endpoint_t *end, int corrupt_op) {
-	int can_fail_p = 0;
+	int can_fail_p = (corrupt_op!=-1);
 	int status = 0;
 
 	E_t *e = Q_start(&end->replay_log);
@@ -139,25 +188,44 @@ void replay(endpoint_t *end, int corrupt_op) {
 		switch(e->op) {
 		case OP_READ8:
 		{
-			unimplemented();
+            write_exact(end, (void *)&(e->val), 1);
 			break;
 		}
 
 		// replay'd process is GET32'ing, so we write to socket.
 		case OP_READ32:
 		{
-			unimplemented();
+            if (n == corrupt_op) {
+                // corrupt it!
+                v = corrupt32(e->val);
+                note("corrupt it to   <READ32:%d:%x>\n", n, v);
+                write_exact(end, (void *)&v, 4);
+            } else {
+                write_exact(end, (void *)&(e->val), 4);
+            }
 			break;
 		}
 		// replay'd process is PUT32'ing, so we read from socket.
 		case OP_WRITE32:
 			assert(n != corrupt_op);
-			unimplemented();
+            if (read_exact(end, (void *)&v, 4, can_fail_p) == 0) {
+                note("read failed\n");
+                goto error;
+                break;
+            }
+            if (v != e->val) {
+                if (can_fail_p) {
+                    note("expecting %x, got %x\n", e->val, v);
+                    goto error;
+                }
+                else
+                    err("expecting %x, got %x\n", e->val, v);
+            }
+            // note("success: matched %s:%d:%x\n", op_to_s(e->op), e->cnt, e->val);
 			break;
 		default: panic("invalid op <%d>\n", e->op);
 		}
 
-		// note("success: matched %s:%d:%x\n", op_to_s(e->op), e->cnt, e->val);
 	}
 
 	// successfully consumed the log.

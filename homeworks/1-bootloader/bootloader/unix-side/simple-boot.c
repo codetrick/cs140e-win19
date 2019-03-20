@@ -61,7 +61,6 @@ void expect(const char *msg, int fd, unsigned v) {
 // unix-side bootloader: send the bytes, using the protocol.
 // read/write using put_uint() get_unint().
 void simple_boot(int fd, const unsigned char * buf, unsigned n) { 
-    unsigned tmp;
     unsigned checksum = crc32(buf, n);
     put_uint(fd, SOH);
     put_uint(fd, n);
@@ -69,7 +68,7 @@ void simple_boot(int fd, const unsigned char * buf, unsigned n) {
     usleep(1000); // sleep for 5 ms
     printf("Header sent\n");
     // check for errors
-    switch (tmp=get_uint(fd)) {
+    switch (get_uint(fd)) {
         case BAD_START:
             panic("header bad start!\n");
         case TOO_BIG:
