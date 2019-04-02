@@ -7,15 +7,15 @@
 #
 # TODO: You should replace these .o's with your code and remove
 # the use of SUPPORT_OBJS
-SUPPORT_OBJS= cs140e-gpioextra.o cs140e-uart.o 
+SUPPORT_OBJS= cs140e-gpioextra.o
 
 START= cs140e-start.o
 
 # add your new files here.
 # e.g., my-uart.c
 SRC = 	cs140e-printf.c  	\
-	cs140e-reboot.c  	\
-	cs140e-timer.c 		\
+	my-reboot.c  	\
+	my-timer.c 		\
 	cs140e-mem-barrier.s  	\
 	cs140e-stdlib.c		\
 	cs140e-cstart.c		\
@@ -25,7 +25,8 @@ SRC = 	cs140e-printf.c  	\
 	cs140e-pwm.c		\
 	cs140e-cache.c		\
 	cs140e-asm.s		\
-	cs140e-put-get.s
+	my-put-get.s \
+	my-uart.c
 
 TARGET = libpi.a
 
