@@ -29,7 +29,13 @@
 #include "tty.h"
 
 void handoff_to(int fd, char *argv[]) {
-	unimplemented();
+    if (dup2(fd, TRACE_FD_HANDOFF)<0)
+        sys_die(dup2, dup2 failed);
+    if (close(fd)<0)
+        sys_die(close, child cannot close fd);
+    execvp((const char *)argv[0], argv);
+    fprintf(stderr, "Execvp failed.\n");
+    return;
 }
 
 // simple state machine to indicate when we've seen a special string
